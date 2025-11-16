@@ -7,4 +7,4 @@ services:
     autoDeploy: true
     envVars:
       - key: DISCORD_BOT_TOKEN
-        fromSecret: DISCORD_BOT_TOKEN
+        value: ""
