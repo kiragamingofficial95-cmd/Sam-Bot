@@ -3,8 +3,8 @@ services:
     name: discord-bot
     env: node
     buildCommand: "npm install"
-    startCommand: "node index.js"
+    startCommand: "node Index.js"
     autoDeploy: true
     envVars:
-      TOKEN: 
+      - key: DISCORD_BOT_TOKEN
         fromSecret: DISCORD_BOT_TOKEN
