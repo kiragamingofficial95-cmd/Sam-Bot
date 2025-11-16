@@ -29,7 +29,7 @@ client.on("messageCreate", async (message) => {
 });
 
 // === LOGIN ===
-client.login("MTQzOTQ5MTg2ODY2MzQ4MDM2MA.G8Bd5j.my1Q-KDOA0XFn1sIcQHRJQ598K2XlsPERx9pms");
+client.login(process.env.DISCORD_BOT_TOKEN);
 
 client.on("ready", () => {
     console.log(`Bot is online as ${client.user.tag}`);
