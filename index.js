@@ -3,15 +3,13 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const { Client, GatewayIntentBits, Collection } = require("discord.js");
+const config = require("./config.json");
 
 // ===== EXPRESS KEEP ALIVE =====
 const app = express();
-app.get("/", (req, res) => {
-    res.send("Bot is running!");
-});
-
+app.get("/", (req, res) => res.send("Bot is running!"));
 app.listen(process.env.PORT || 3000, () => {
-    console.log("🌐 Express server is active");
+    console.log("🌐 Express keep-alive active");
 });
 
 // ===== DISCORD CLIENT =====
@@ -26,59 +24,56 @@ const client = new Client({
 
 client.commands = new Collection();
 
-// ===== LOAD COMMANDS (auto load commands folder) =====
+// ===== AUTO LOAD COMMANDS =====
 const commandsPath = path.join(__dirname, "commands");
-const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith(".js"));
+const commandFiles = fs.readdirSync(commandsPath).filter(f => f.endsWith(".js"));
 
 for (const file of commandFiles) {
-    const filePath = path.join(commandsPath, file);
-    const command = require(filePath);
-    client.commands.set(command.data.name, command);
+    const cmd = require(path.join(commandsPath, file));
+    client.commands.set(cmd.data.name, cmd);
 }
 
-// ===== CONFIG =====
-const TARGET_USER_ID = "875722667557285939";
-const EMOJI_ID = "1431503007689740429"; // React emoji ID only
+// ===== MESSAGE REACTION CONFIG =====
+const TARGET_USER = "875722667557285939";
+const EMOJI_ID = "1431503007689740429";
 
-// ===== SLOT COMMAND HANDLER =====
-client.on("interactionCreate", async interaction => {
+// ===== SLASH COMMAND EXECUTION =====
+client.on("interactionCreate", async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
 
     const command = client.commands.get(interaction.commandName);
     if (!command) return;
 
     try {
-        await command.execute(interaction);
+        await command.execute(interaction, client, config);
     } catch (err) {
         console.error(err);
         return interaction.reply({
-            content: "⚠️ Error executing command!",
-            ephemeral: true,
+            content: "⚠️ Command failed!",
+            ephemeral: true
         });
     }
 });
 
-// ===== MESSAGE REACTION LOGIC =====
-client.on("messageCreate", async (message) => {
+// ===== MESSAGE REACTION FEATURE =====
+client.on("messageCreate", async message => {
     if (message.author.bot) return;
 
-    if (message.mentions.users.has(TARGET_USER_ID)) {
+    if (message.mentions.users.has(TARGET_USER)) {
         try {
             await message.react(EMOJI_ID);
-            console.log(`Reacted to message by ${message.author.tag}`);
         } catch (err) {
-            console.error("Reaction failed:", err);
+            console.error("Reaction error:", err);
         }
     }
 });
 
-// ===== BOT READY =====
+// ===== BOT ONLINE =====
 client.on("ready", () => {
     console.log(`🔥 Bot is online as ${client.user.tag}`);
 
-    // BOT STATUS
     client.user.setPresence({
-        activities: [{ name: "@everyone", type: 3 }], // Watching @everyone
+        activities: [{ name: "@everyone", type: 3 }],
         status: "online"
     });
 });
