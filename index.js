@@ -1,6 +1,8 @@
 // ===== IMPORTS =====
 const express = require("express");
-const { Client, GatewayIntentBits } = require("discord.js");
+const fs = require("fs");
+const path = require("path");
+const { Client, GatewayIntentBits, Collection } = require("discord.js");
 
 // ===== EXPRESS KEEP ALIVE =====
 const app = express();
@@ -22,21 +24,50 @@ const client = new Client({
     ]
 });
 
-// ===== CONFIG =====
-const TARGET_USER_ID = "875722667557285939";   // Your client's ID
-const EMOJI_ID = "1431503007689740429";         // Animated emoji ID ONLY (no <a:..:..>)
+client.commands = new Collection();
 
-// ===== BOT LOGIC =====
+// ===== LOAD COMMANDS (auto load commands folder) =====
+const commandsPath = path.join(__dirname, "commands");
+const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith(".js"));
+
+for (const file of commandFiles) {
+    const filePath = path.join(commandsPath, file);
+    const command = require(filePath);
+    client.commands.set(command.data.name, command);
+}
+
+// ===== CONFIG =====
+const TARGET_USER_ID = "875722667557285939";
+const EMOJI_ID = "1431503007689740429"; // React emoji ID only
+
+// ===== SLOT COMMAND HANDLER =====
+client.on("interactionCreate", async interaction => {
+    if (!interaction.isChatInputCommand()) return;
+
+    const command = client.commands.get(interaction.commandName);
+    if (!command) return;
+
+    try {
+        await command.execute(interaction);
+    } catch (err) {
+        console.error(err);
+        return interaction.reply({
+            content: "⚠️ Error executing command!",
+            ephemeral: true,
+        });
+    }
+});
+
+// ===== MESSAGE REACTION LOGIC =====
 client.on("messageCreate", async (message) => {
     if (message.author.bot) return;
 
-    // Check if target user is mentioned
     if (message.mentions.users.has(TARGET_USER_ID)) {
         try {
-            await message.react(EMOJI_ID); // Correct animated emoji usage
-            console.log(`Reacted to a message by ${message.author.tag}`);
+            await message.react(EMOJI_ID);
+            console.log(`Reacted to message by ${message.author.tag}`);
         } catch (err) {
-            console.error("Failed to react to message:", err);
+            console.error("Reaction failed:", err);
         }
     }
 });
@@ -44,6 +75,12 @@ client.on("messageCreate", async (message) => {
 // ===== BOT READY =====
 client.on("ready", () => {
     console.log(`🔥 Bot is online as ${client.user.tag}`);
+
+    // BOT STATUS
+    client.user.setPresence({
+        activities: [{ name: "@everyone", type: 3 }], // Watching @everyone
+        status: "online"
+    });
 });
 
 // ===== LOGIN =====
