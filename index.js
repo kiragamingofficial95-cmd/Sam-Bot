@@ -105,10 +105,14 @@ client.on("messageCreate", async (message) => {
 // Ready
 client.once("ready", () => {
   console.log(`🔥 Logged in as ${client.user.tag}`);
-  client.user.setPresence({
-    activities: [{ name: "@everyone", type: 3 }],
-    status: "online"
-  }).catch(()=>{});
+  try {
+    client.user.setPresence({
+        activities: [{ name: "@everyone", type: 3 }],
+        status: "online"
+    });
+} catch (err) {
+    console.error("Presence error:", err);
+}
 });
 
 // Login
